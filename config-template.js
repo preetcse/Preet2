@@ -1,3 +1,4 @@
+(cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF'
 diff --git a/config-template.js b/config-template.js
 --- a/config-template.js
 +++ b/config-template.js
@@ -92,3 +93,5 @@ diff --git a/config-template.js b/config-template.js
 +//    - Upload to web hosting (GitHub Pages, Netlify, etc.)
 +//    - Ensure HTTPS is enabled
 +//    - Test all functionality
+EOF
+)
