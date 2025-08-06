@@ -364,7 +364,7 @@ class ElectricalStoreApp {
         try {
             const metadata = {
                 name: `${customerName}_${transactionType}_${Date.now()}_${file.name}`,
-                parents: ['YOUR_FOLDER_ID'], // Replace with your folder ID
+                parents: ['https://drive.google.com/drive/folders/1ITgmTqYMViLVezrlMEPyaaiPL6MbCYI2'], // Replace with your folder ID
                 description: `Bill for ${customerName} - ${transactionType}`
             };
 
