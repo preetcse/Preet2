@@ -19,7 +19,7 @@ class ElectricalStoreApp {
         
         // Google Drive API configuration
         this.googleDriveConfig = {
-            apiKey: 'YOUR_GOOGLE_API_KEY', // You still need to create an API Key
+            apiKey: 'AIzaSyAHaAwjtqBnoOMuZY_1yFA8X4CBnkf2eYc',
             clientId: '2633417852-d1qhnoi6rlgb191l7h0ohtfoiiduivmb.apps.googleusercontent.com',
             discoveryDoc: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
             scopes: 'https://www.googleapis.com/auth/drive.file'
