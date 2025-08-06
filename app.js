@@ -25,6 +25,10 @@ class ElectricalStoreApp {
             scopes: 'https://www.googleapis.com/auth/drive.file'
         };
         
+        // Check if Google Drive is properly configured
+        this.isGoogleDriveConfigured = this.googleDriveConfig.apiKey !== 'YOUR_GOOGLE_API_KEY' && 
+                                       this.googleDriveConfig.clientId !== 'YOUR_GOOGLE_CLIENT_ID';
+        
         // App state
         this.isLoggedIn = false;
         this.isFirebaseConnected = false;
@@ -173,6 +177,12 @@ class ElectricalStoreApp {
     }
 
     async initializeGoogleDrive() {
+        // Skip if Google Drive is not configured
+        if (!this.isGoogleDriveConfigured) {
+            console.warn('Google Drive API not configured. Skipping initialization.');
+            return;
+        }
+        
         try {
             await this.loadGoogleDriveAPI();
             await this.gapi.load('auth2', () => {
@@ -341,6 +351,11 @@ class ElectricalStoreApp {
     }
 
     async uploadBillToGoogleDrive(file, customerName, transactionType) {
+        if (!this.isGoogleDriveConfigured) {
+            console.warn('Google Drive not configured. Skipping upload.');
+            return null;
+        }
+        
         if (!this.isGoogleDriveConnected) {
             console.warn('Google Drive not connected');
             return null;
@@ -460,6 +475,16 @@ class ElectricalStoreApp {
             document.getElementById('billImage').value = '';
             document.getElementById('billPreview').innerHTML = '';
             
+            // Show/hide Google Drive warning
+            const driveWarning = document.getElementById('driveNotConfiguredWarning');
+            if (driveWarning) {
+                if (this.isGoogleDriveConfigured) {
+                    driveWarning.classList.add('hidden');
+                } else {
+                    driveWarning.classList.remove('hidden');
+                }
+            }
+            
             this.openModal('saleModal');
         } catch (error) {
             console.error('Error opening sale modal:', error);
@@ -488,9 +513,13 @@ class ElectricalStoreApp {
             // Upload bill image to Google Drive if provided
             let billImageUrl = '';
             if (billFile) {
-                billImageUrl = await this.uploadBillToGoogleDrive(billFile, this.currentCustomer.name, 'sale');
-                if (!billImageUrl) {
-                    this.showAlert('Failed to upload bill image, but sale will be recorded.', 'warning');
+                if (this.isGoogleDriveConfigured) {
+                    billImageUrl = await this.uploadBillToGoogleDrive(billFile, this.currentCustomer.name, 'sale');
+                    if (!billImageUrl) {
+                        this.showAlert('Failed to upload bill image, but sale will be recorded.', 'warning');
+                    }
+                } else {
+                    this.showAlert('Google Drive not configured. Bill image not uploaded, but sale will be recorded.', 'info');
                 }
             }
 
@@ -721,6 +750,11 @@ class ElectricalStoreApp {
     }
 
     async connectGoogleDrive() {
+        if (!this.isGoogleDriveConfigured) {
+            this.showAlert('Google Drive API not configured. Please set up your API credentials in app.js', 'warning');
+            return;
+        }
+        
         try {
             this.showLoading();
             
@@ -1081,13 +1115,25 @@ class ElectricalStoreApp {
     updateSettingsPage() {
         const dbStatus = document.getElementById('dbStatus');
         if (dbStatus) {
-            if (this.isFirebaseConnected && this.isGoogleDriveConnected) {
-                dbStatus.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> All services connected</span>';
-            } else if (this.isFirebaseConnected) {
-                dbStatus.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Firebase connected, Google Drive disconnected</span>';
+            let statusHTML = '';
+            
+            // Firebase status
+            if (this.isFirebaseConnected) {
+                statusHTML += '<div class="mb-2"><span class="text-success"><i class="fas fa-check-circle"></i> Firebase: Connected</span></div>';
             } else {
-                dbStatus.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> Services disconnected - using offline mode</span>';
+                statusHTML += '<div class="mb-2"><span class="text-danger"><i class="fas fa-times-circle"></i> Firebase: Not connected</span></div>';
             }
+            
+            // Google Drive status
+            if (!this.isGoogleDriveConfigured) {
+                statusHTML += '<div class="mb-2"><span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Google Drive: Not configured</span><br><small class="text-muted">Update API credentials in app.js to enable image uploads</small></div>';
+            } else if (this.isGoogleDriveConnected) {
+                statusHTML += '<div class="mb-2"><span class="text-success"><i class="fas fa-check-circle"></i> Google Drive: Connected</span></div>';
+            } else {
+                statusHTML += '<div class="mb-2"><span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Google Drive: Configured but not connected</span></div>';
+            }
+            
+            dbStatus.innerHTML = statusHTML;
         }
     }
 
