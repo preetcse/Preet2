@@ -185,9 +185,17 @@ class ElectricalStoreApp {
         
         try {
             await this.loadGoogleDriveAPI();
-            await this.gapi.load('auth2', () => {
-                this.gapi.auth2.init({
-                    client_id: this.googleDriveConfig.clientId
+ 
+            // Ensure auth2 is loaded and only initialized once.
+            await new Promise((resolve) => {
+                this.gapi.load('auth2', () => {
+                    // If an auth instance already exists, reuse it instead of re-initializing.
+                    if (!this.gapi.auth2.getAuthInstance()) {
+                        this.gapi.auth2.init({
+                            client_id: this.googleDriveConfig.clientId
+                        });
+                    }
+                    resolve();
                 });
             });
             console.log('Google Drive API loaded successfully');
