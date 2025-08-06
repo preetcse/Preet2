@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amarjit Electrical Store - Professional</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 50px;
+            max-width: 450px;
+            margin: 10vh auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            padding: 30px;
+            max-width: 1200px;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .customer-card {
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .customer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .stats-card h4 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 15px 15px 0 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+
+        .btn {
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .bill-preview img {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .transaction-item {
+            border-left: 4px solid var(--info-color);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .badge {
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .auth-container {
+                margin: 5vh auto;
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="auth-container">
+        <div class="text-center mb-4">
+            <i class="fas fa-bolt text-primary" style="font-size: 4rem;"></i>
+            <h2 class="text-primary mt-3 mb-2">Amarjit Electrical Store</h2>
+            <p class="text-muted">Professional Customer Management System</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="mb-4">
+                <label for="password" class="form-label fw-bold">Enter Password</label>
+                <input type="password" class="form-control form-control-lg" id="password" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-sign-in-alt me-2"></i> Access Store Management
+            </button>
+        </form>
+        
+        <div id="loginError" class="alert alert-danger mt-3 hidden">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Incorrect password. Please try again.
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <div class="container-fluid py-3">
+            <!-- Header -->
+            <div class="main-container">
+                <!-- Navigation Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                    <div>
+                        <h1 class="text-primary mb-1 navbar-brand">
+                            <i class="fas fa-bolt me-2"></i> Amarjit Electrical Store
+                        </h1>
+                        <p class="text-muted mb-0">Professional Customer Credit Management System</p>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <button id="googleDriveBtn" class="btn btn-outline-primary me-3">
+                            <i class="fab fa-google-drive me-2"></i>
+                            <span id="driveStatus">Connect Services</span>
+                        </button>
+                        <button onclick="logout()" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Dashboard -->
+                <div class="row mb-4">
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="stats-card">
+                            <h4 id="customerCount">0</h4>
+                            <p class="mb-0">Total Customers</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="stats-card bg-success">
+                            <h4 id="todaySales">₹0</h4>
+                            <p class="mb-0">Today's Sales</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="stats-card bg-warning">
+                            <h4 id="todayPayments">₹0</h4>
+                            <p class="mb-0">Today's Payments</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="stats-card bg-danger">
+                            <h4 id="totalDebt">₹0</h4>
+                            <p class="mb-0">Total Pending</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row mb-4">
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card feature-card h-100" onclick="showSection('customers')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users text-primary" style="font-size: 2.5rem;"></i>
+                                <h5 class="mt-3 mb-2">Customers</h5>
+                                <p class="text-muted small mb-0">Manage customer database</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card feature-card h-100" onclick="showSection('billing')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-receipt text-success" style="font-size: 2.5rem;"></i>
+                                <h5 class="mt-3 mb-2">Quick Sale</h5>
+                                <p class="text-muted small mb-0">Record sales & bills</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card feature-card h-100" onclick="showSection('reports')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-bar text-info" style="font-size: 2.5rem;"></i>
+                                <h5 class="mt-3 mb-2">Reports</h5>
+                                <p class="text-muted small mb-0">Business analytics</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card feature-card h-100" onclick="showSection('settings')">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cog text-warning" style="font-size: 2.5rem;"></i>
+                                <h5 class="mt-3 mb-2">Settings</h5>
+                                <p class="text-muted small mb-0">Backup & sync</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Sections -->
+                <div id="contentArea">
+                    <!-- Dashboard -->
+                    <div id="dashboard">
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-users me-2"></i> Recent Customers</h5>
+                                    </div>
+                                    <div class="card-body" id="recentCustomers">
+                                        <p class="text-muted">No customers added yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-warning text-white">
+                                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Pending Payments</h5>
+                                    </div>
+                                    <div class="card-body" id="pendingPayments">
+                                        <p class="text-muted">No pending payments.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Monthly Stats -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> This Month</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center">
+                                            <div class="col-6">
+                                                <h4 class="text-success" id="monthSales">₹0</h4>
+                                                <p class="mb-0 text-muted">Sales</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <h4 class="text-info" id="monthPayments">₹0</h4>
+                                                <p class="mb-0 text-muted">Payments</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Quick Actions</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <button class="btn btn-primary w-100 mb-2" onclick="showAddCustomer()">
+                                            <i class="fas fa-user-plus me-2"></i> Add New Customer
+                                        </button>
+                                        <button class="btn btn-success w-100" onclick="exportData()">
+                                            <i class="fas fa-download me-2"></i> Export Data
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customers Section -->
+                    <div id="customers" class="hidden">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3><i class="fas fa-users me-2"></i> Customer Management</h3>
+                            <button class="btn btn-primary" onclick="showAddCustomer()">
+                                <i class="fas fa-plus me-2"></i> Add Customer
+                            </button>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="customerSearch" class="form-control" 
+                                           placeholder="Search by name, phone, or address..." onkeyup="searchCustomers()">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mt-2 mt-md-0">
+                                <select class="form-select" id="customerFilter">
+                                    <option value="all">All Customers</option>
+                                    <option value="debt">With Debt</option>
+                                    <option value="clear">No Debt</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="customerList" class="row">
+                            <!-- Customer cards will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Billing Section -->
+                    <div id="billing" class="hidden">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white text-center">
+                                        <h4 class="mb-0"><i class="fas fa-receipt me-2"></i> Quick Billing</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-info-circle text-info" style="font-size: 3rem;"></i>
+                                            <h5 class="mt-3">Quick Billing</h5>
+                                            <p class="text-muted">To add sales or record payments, go to the Customers section and select a customer.</p>
+                                            <button class="btn btn-primary" onclick="showSection('customers')">
+                                                <i class="fas fa-users me-2"></i> Go to Customers
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Section -->
+                    <div id="reports" class="hidden">
+                        <h3 class="mb-4"><i class="fas fa-chart-bar me-2"></i> Business Reports</h3>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="fas fa-users text-primary" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Customer Analysis</h5>
+                                        <p class="text-muted">Customer growth and activity reports</p>
+                                        <button class="btn btn-outline-primary" disabled>
+                                            Coming Soon
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="fas fa-chart-line text-success" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Sales Reports</h5>
+                                        <p class="text-muted">Detailed sales analytics and trends</p>
+                                        <button class="btn btn-outline-success" disabled>
+                                            Coming Soon
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <i class="fas fa-money-bill-wave text-warning" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Payment Reports</h5>
+                                        <p class="text-muted">Payment collection and outstanding reports</p>
+                                        <button class="btn btn-outline-warning" disabled>
+                                            Coming Soon
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div id="settings" class="hidden">
+                        <h3 class="mb-4"><i class="fas fa-cog me-2"></i> Application Settings</h3>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">System Status</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>Database Connection</h6>
+                                        <p id="dbStatus" class="text-muted">Checking connection...</p>
+                                        
+                                        <hr>
+                                        
+                                        <h6>Data Management</h6>
+                                        <div class="d-grid gap-2 d-md-flex">
+                                            <button class="btn btn-outline-primary" onclick="app.handleCloudSync()">
+                                                <i class="fas fa-sync me-2"></i> Sync Data
+                                            </button>
+                                            <button class="btn btn-outline-success" onclick="exportData()">
+                                                <i class="fas fa-download me-2"></i> Export Data
+                                            </button>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <h6>Application Information</h6>
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td><strong>Version:</strong></td>
+                                                <td>2.0.0 Professional</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Database:</strong></td>
+                                                <td>Google Firestore</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>File Storage:</strong></td>
+                                                <td>Google Drive</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Platform:</strong></td>
+                                                <td>Progressive Web App</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Quick Stats</h5>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <div class="mb-3">
+                                            <h4 class="text-primary" id="settingsCustomerCount">0</h4>
+                                            <p class="mb-0 text-muted">Total Customers</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <h4 class="text-success" id="settingsTotalSales">₹0</h4>
+                                            <p class="mb-0 text-muted">Total Sales</p>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-danger" id="settingsPendingAmount">₹0</h4>
+                                            <p class="mb-0 text-muted">Pending Amount</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCustomerModalLabel">
+                        <i class="fas fa-user-plus me-2"></i> Add New Customer
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustomerForm">
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">
+                                <i class="fas fa-user me-2"></i> Customer Name *
+                            </label>
+                            <input type="text" class="form-control" id="customerName" required 
+                                   placeholder="Enter customer's full name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerPhone" class="form-label">
+                                <i class="fas fa-phone me-2"></i> Phone Number *
+                            </label>
+                            <input type="tel" class="form-control" id="customerPhone" required 
+                                   placeholder="Enter phone number">
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerAddress" class="form-label">
+                                <i class="fas fa-map-marker-alt me-2"></i> Address
+                            </label>
+                            <textarea class="form-control" id="customerAddress" rows="3" 
+                                      placeholder="Enter customer's address (optional)"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="addCustomer()">
+                        <i class="fas fa-plus me-2"></i> Add Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sale Modal -->
+    <div class="modal fade" id="saleModal" tabindex="-1" aria-labelledby="saleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saleModalLabel">
+                        <i class="fas fa-plus me-2"></i> Record Sale
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Recording sale for: <strong id="saleCustomerName"></strong>
+                    </div>
+                    
+                    <form id="saleForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="saleAmount" class="form-label">
+                                    <i class="fas fa-rupee-sign me-2"></i> Sale Amount *
+                                </label>
+                                <input type="number" class="form-control" id="saleAmount" required 
+                                       step="0.01" min="0.01" placeholder="Enter sale amount">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="billImage" class="form-label">
+                                    <i class="fas fa-file-image me-2"></i> Bill Image
+                                </label>
+                                <input type="file" class="form-control" id="billImage" 
+                                       accept="image/*" capture="environment">
+                                <small class="text-muted">Upload bill photo (optional)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="saleDescription" class="form-label">
+                                <i class="fas fa-clipboard me-2"></i> Description
+                            </label>
+                            <textarea class="form-control" id="saleDescription" rows="3" 
+                                      placeholder="Enter sale details (optional)"></textarea>
+                        </div>
+                        
+                        <div id="billPreview" class="bill-preview"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="app.processSale()">
+                        <i class="fas fa-plus me-2"></i> Record Sale
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">
+                        <i class="fas fa-money-bill me-2"></i> Record Payment
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Recording payment from: <strong id="paymentCustomerName"></strong><br>
+                        Current debt: <strong id="paymentCurrentDebt"></strong>
+                    </div>
+                    
+                    <form id="paymentForm">
+                        <div class="mb-3">
+                            <label for="paymentAmount" class="form-label">
+                                <i class="fas fa-rupee-sign me-2"></i> Payment Amount *
+                            </label>
+                            <input type="number" class="form-control" id="paymentAmount" required 
+                                   step="0.01" min="0.01" placeholder="Enter payment amount">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="paymentDescription" class="form-label">
+                                <i class="fas fa-clipboard me-2"></i> Description
+                            </label>
+                            <textarea class="form-control" id="paymentDescription" rows="2" 
+                                      placeholder="Enter payment details (optional)"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="app.processPayment()">
+                        <i class="fas fa-money-bill me-2"></i> Record Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Details Modal -->
+    <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customerDetailsModalLabel">
+                        <i class="fas fa-user me-2"></i> Customer Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Customer Information</h6>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Name:</strong></td>
+                                            <td id="viewCustomerName"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Phone:</strong></td>
+                                            <td id="viewCustomerPhone"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Address:</strong></td>
+                                            <td id="viewCustomerAddress"></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Current Debt:</strong></td>
+                                            <td><span class="fw-bold" id="viewCustomerDebt"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Joined:</strong></td>
+                                            <td id="viewCustomerJoined"></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Quick Actions</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="bootstrap.Modal.getInstance(document.getElementById('customerDetailsModal')).hide(); app.addSale(app.currentCustomer?.id)">
+                                            <i class="fas fa-plus me-2"></i> Add Sale
+                                        </button>
+                                        <button class="btn btn-success" onclick="bootstrap.Modal.getInstance(document.getElementById('customerDetailsModal')).hide(); app.addPayment(app.currentCustomer?.id)">
+                                            <i class="fas fa-money-bill me-2"></i> Record Payment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-history me-2"></i> Transaction History</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="customerTransactions" style="max-height: 400px; overflow-y: auto;">
+                                <!-- Transactions will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="hidden position-fixed top-50 start-50 translate-middle">
+        <div class="d-flex flex-column align-items-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-primary fw-bold">Processing...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
