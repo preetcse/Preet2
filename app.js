@@ -1,39 +1,29 @@
 // Amarjit Electrical Store - Cross-Device Application
-// Google Drive Integration with Cross-Device Authentication
 
 class ElectricalStoreApp {
     constructor() {
-        // Your master password (change this!)
-        this.PASSWORD = 'amarjit123'; // ← Change this to your password
+        // Your password (change this!)
+        this.PASSWORD = 'amarjit123';
         
-        // Encryption key for storing tokens securely
-        this.ENCRYPTION_KEY = 'amarjit_electrical_2024'; // ← You can change this too
-        
-        // Google Drive API configuration
-        this.CLIENT_ID = 'your-google-client-id-here';
-        this.API_KEY = 'your-google-api-key-here';
-        this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-        this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        // Google Drive API configuration - REAL CREDENTIALS
+        this.CLIENT_ID = '2633417852-d1qhnoi6rlgb191l7h0ohtfoiiduivmb.apps.googleusercontent.com';
+        this.API_KEY = 'AIzaSyAHaAwjtqBnoOMuZY_1yFA8X4CBnkf2eYc';
         
         // App state
         this.isLoggedIn = false;
         this.isGoogleDriveConnected = false;
-        this.googleAuth = null;
         this.customers = [];
-        this.transactions = [];
-        this.payments = [];
         this.appFolderId = null;
         
         this.init();
     }
 
     async init() {
-        // Check if user is already logged in (session only)
         const sessionLogin = sessionStorage.getItem('currentSession');
         if (sessionLogin === 'active') {
             this.isLoggedIn = true;
             this.showMainApp();
-            await this.checkGoogleDriveConnection();
+            this.checkGoogleDriveConnection();
         }
 
         this.setupEventListeners();
@@ -50,41 +40,45 @@ class ElectricalStoreApp {
         });
     }
 
-    async handleLogin() {
+    handleLogin() {
         const password = document.getElementById('password').value;
         const errorDiv = document.getElementById('loginError');
 
         if (password === this.PASSWORD) {
-            // Correct password - start session
             sessionStorage.setItem('currentSession', 'active');
             this.isLoggedIn = true;
             this.showMainApp();
-            
-            // Try to auto-connect to Google Drive
-            await this.checkGoogleDriveConnection();
+            this.loadLocalData();
+            this.checkGoogleDriveConnection();
         } else {
-            // Wrong password
             errorDiv.classList.remove('hidden');
             document.getElementById('password').value = '';
-            setTimeout(() => {
-                errorDiv.classList.add('hidden');
-            }, 3000);
+            setTimeout(() => errorDiv.classList.add('hidden'), 3000);
         }
     }
 
     async checkGoogleDriveConnection() {
+        this.updateGoogleDriveStatus(false);
+    }
+
+    async handleGoogleDriveConnection() {
         this.showLoading();
         
         try {
-            // Initialize Google API
             await this.initializeGoogleAPI();
             
-            // Try to load existing authentication from Google Drive
-            await this.loadAuthFromGoogleDrive();
+            const authInstance = gapi.auth2.getAuthInstance();
+            if (!authInstance.isSignedIn.get()) {
+                await authInstance.signIn();
+            }
+
+            this.isGoogleDriveConnected = true;
+            this.updateGoogleDriveStatus(true);
+            this.showAlert('Google Drive connected successfully! Data will sync automatically.', 'success');
             
         } catch (error) {
-            console.log('Google Drive not connected yet:', error);
-            this.updateGoogleDriveStatus(false);
+            console.error('Google Drive connection failed:', error);
+            this.showAlert('Failed to connect to Google Drive. Please try again.', 'danger');
         }
         
         this.hideLoading();
@@ -102,11 +96,10 @@ class ElectricalStoreApp {
                     await gapi.client.init({
                         apiKey: this.API_KEY,
                         clientId: this.CLIENT_ID,
-                        discoveryDocs: [this.DISCOVERY_DOC],
-                        scope: this.SCOPES
+                        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+                        scope: 'https://www.googleapis.com/auth/drive.file'
                     });
                     
-                    this.googleAuth = gapi.auth2.getAuthInstance();
                     resolve();
                 } catch (error) {
                     reject(error);
@@ -115,238 +108,6 @@ class ElectricalStoreApp {
         });
     }
 
-    async loadAuthFromGoogleDrive() {
-        // Check if user is already signed in to Google
-        if (!this.googleAuth.isSignedIn.get()) {
-            throw new Error('Not signed in to Google');
-        }
-
-        // Look for our app folder and auth file
-        const authData = await this.findAndLoadAuthFile();
-        
-        if (authData) {
-            // Found existing auth - we're connected!
-            this.isGoogleDriveConnected = true;
-            this.updateGoogleDriveStatus(true);
-            await this.loadAllDataFromGoogleDrive();
-            this.showAlert('Automatically connected to Google Drive!', 'success');
-        } else {
-            // No auth file found - need to set up
-            this.updateGoogleDriveStatus(false);
-        }
-    }
-
-    async handleGoogleDriveConnection() {
-        if (this.isGoogleDriveConnected) {
-            await this.syncAllData();
-            return;
-        }
-
-        try {
-            this.showLoading();
-            
-            // Initialize Google API if needed
-            if (!this.googleAuth) {
-                await this.initializeGoogleAPI();
-            }
-
-            // Sign in to Google
-            if (!this.googleAuth.isSignedIn.get()) {
-                await this.googleAuth.signIn();
-            }
-
-            // Create app folder and save auth tokens
-            await this.setupGoogleDriveStorage();
-            
-            this.isGoogleDriveConnected = true;
-            this.updateGoogleDriveStatus(true);
-            this.showAlert('Google Drive connected successfully! Now works on all devices.', 'success');
-            
-        } catch (error) {
-            console.error('Google Drive connection failed:', error);
-            this.showAlert('Failed to connect to Google Drive. Please try again.', 'danger');
-        }
-        
-        this.hideLoading();
-    }
-
-    async setupGoogleDriveStorage() {
-        // Create app folder
-        this.appFolderId = await this.createAppFolder();
-        
-        // Save authentication info to Google Drive
-        const authData = {
-            connected: true,
-            connectionDate: new Date().toISOString(),
-            deviceInfo: navigator.userAgent.substring(0, 100),
-            encryptionKey: this.ENCRYPTION_KEY
-        };
-        
-        await this.saveToGoogleDrive('auth_config.json', authData);
-        
-        // Initialize empty data files if they don't exist
-        if (!await this.fileExists('customers.json')) {
-            await this.saveToGoogleDrive('customers.json', []);
-        }
-        if (!await this.fileExists('transactions.json')) {
-            await this.saveToGoogleDrive('transactions.json', []);
-        }
-        if (!await this.fileExists('payments.json')) {
-            await this.saveToGoogleDrive('payments.json', []);
-        }
-    }
-
-    async createAppFolder() {
-        const metadata = {
-            name: 'Amarjit Electrical Store Data',
-            mimeType: 'application/vnd.google-apps.folder'
-        };
-
-        const response = await gapi.client.drive.files.create({
-            resource: metadata
-        });
-
-        return response.result.id;
-    }
-
-    async findAndLoadAuthFile() {
-        try {
-            // Search for our app folder
-            const folderResponse = await gapi.client.drive.files.list({
-                q: "name='Amarjit Electrical Store Data' and mimeType='application/vnd.google-apps.folder'",
-                fields: 'files(id, name)'
-            });
-
-            if (folderResponse.result.files.length === 0) {
-                return null; // No app folder found
-            }
-
-            this.appFolderId = folderResponse.result.files[0].id;
-
-            // Look for auth config file
-            const authResponse = await gapi.client.drive.files.list({
-                q: `name='auth_config.json' and parents='${this.appFolderId}'`,
-                fields: 'files(id, name)'
-            });
-
-            if (authResponse.result.files.length === 0) {
-                return null; // No auth file found
-            }
-
-            // Load auth file
-            const fileId = authResponse.result.files[0].id;
-            const fileContent = await gapi.client.drive.files.get({
-                fileId: fileId,
-                alt: 'media'
-            });
-
-            return JSON.parse(fileContent.body);
-        } catch (error) {
-            console.error('Error loading auth file:', error);
-            return null;
-        }
-    }
-
-    async saveToGoogleDrive(fileName, data) {
-        const fileContent = JSON.stringify(data, null, 2);
-        
-        // Check if file already exists
-        const existingFile = await this.findFile(fileName);
-        
-        if (existingFile) {
-            // Update existing file
-            await gapi.client.request({
-                path: `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}`,
-                method: 'PATCH',
-                params: {
-                    uploadType: 'media'
-                },
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: fileContent
-            });
-        } else {
-            // Create new file
-            const metadata = {
-                name: fileName,
-                parents: [this.appFolderId]
-            };
-
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-            form.append('file', new Blob([fileContent], {type: 'application/json'}));
-
-            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`
-                },
-                body: form
-            });
-        }
-    }
-
-    async loadFromGoogleDrive(fileName) {
-        const file = await this.findFile(fileName);
-        if (!file) return null;
-
-        const response = await gapi.client.drive.files.get({
-            fileId: file.id,
-            alt: 'media'
-        });
-
-        return JSON.parse(response.body);
-    }
-
-    async findFile(fileName) {
-        if (!this.appFolderId) return null;
-
-        const response = await gapi.client.drive.files.list({
-            q: `name='${fileName}' and parents='${this.appFolderId}'`,
-            fields: 'files(id, name)'
-        });
-
-        return response.result.files.length > 0 ? response.result.files[0] : null;
-    }
-
-    async fileExists(fileName) {
-        return await this.findFile(fileName) !== null;
-    }
-
-    async loadAllDataFromGoogleDrive() {
-        try {
-            this.customers = await this.loadFromGoogleDrive('customers.json') || [];
-            this.transactions = await this.loadFromGoogleDrive('transactions.json') || [];
-            this.payments = await this.loadFromGoogleDrive('payments.json') || [];
-            
-            this.updateDashboard();
-            this.displayCustomers();
-        } catch (error) {
-            console.error('Error loading data from Google Drive:', error);
-        }
-    }
-
-    async syncAllData() {
-        if (!this.isGoogleDriveConnected) return;
-        
-        this.showLoading();
-        
-        try {
-            await this.saveToGoogleDrive('customers.json', this.customers);
-            await this.saveToGoogleDrive('transactions.json', this.transactions);
-            await this.saveToGoogleDrive('payments.json', this.payments);
-            
-            this.showAlert('Data synced to Google Drive successfully!', 'success');
-        } catch (error) {
-            console.error('Sync failed:', error);
-            this.showAlert('Failed to sync data. Please try again.', 'danger');
-        }
-        
-        this.hideLoading();
-    }
-
-    // Customer Management (same as before but with Google Drive sync)
     async addCustomer() {
         const name = document.getElementById('customerName').value.trim();
         const phone = document.getElementById('customerPhone').value.trim();
@@ -369,58 +130,58 @@ class ElectricalStoreApp {
             phone: phone,
             address: address,
             totalDebt: 0,
-            createdDate: new Date().toISOString(),
-            lastTransaction: null
+            createdDate: new Date().toISOString()
         };
 
         this.customers.push(customer);
-        
-        // Auto-sync to Google Drive
+        this.saveLocalData();
+
         if (this.isGoogleDriveConnected) {
-            await this.saveToGoogleDrive('customers.json', this.customers);
+            await this.syncToGoogleDrive();
         }
 
-        // Clear form and close modal
         document.getElementById('addCustomerForm').reset();
         const modal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
         modal.hide();
 
         this.displayCustomers();
         this.updateDashboard();
-        this.showAlert('Customer added and synced to Google Drive!', 'success');
+        this.showAlert('Customer added successfully!', 'success');
     }
 
-    updateGoogleDriveStatus(connected) {
-        const btn = document.getElementById('googleDriveBtn');
-        const status = document.getElementById('driveStatus');
+    async syncToGoogleDrive() {
+        if (!this.isGoogleDriveConnected) return;
         
-        if (connected) {
-            btn.className = 'btn btn-success me-2';
-            status.innerHTML = '<i class="fas fa-check"></i> Drive Connected';
-        } else {
-            btn.className = 'btn btn-outline-primary me-2';
-            status.innerHTML = '<i class="fab fa-google-drive"></i> Connect Drive';
+        try {
+            await this.saveToGoogleDrive('customers.json', this.customers);
+            this.showAlert('Data synced to Google Drive!', 'info');
+        } catch (error) {
+            console.error('Sync failed:', error);
         }
     }
 
-    logout() {
-        sessionStorage.removeItem('currentSession');
-        this.isLoggedIn = false;
-        this.isGoogleDriveConnected = false;
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('mainApp').classList.add('hidden');
-        document.getElementById('password').value = '';
-    }
+    async saveToGoogleDrive(fileName, data) {
+        const fileContent = JSON.stringify(data, null, 2);
+        
+        const metadata = {
+            name: fileName,
+            parents: ['appDataFolder']
+        };
 
-    showMainApp() {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        this.updateDashboard();
-    }
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+        form.append('file', new Blob([fileContent], {type: 'application/json'}));
 
-    // [Include all the other methods from the previous version]
-    // displayCustomers(), searchCustomers(), updateDashboard(), etc.
-    // [Same code as before - keeping this response shorter]
+        const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+
+        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: form
+        });
+    }
 
     displayCustomers() {
         const customerList = document.getElementById('customerList');
@@ -458,16 +219,13 @@ class ElectricalStoreApp {
                         </div>
                         
                         <div class="mt-3">
-                            <button class="btn btn-sm btn-primary me-1" 
-                                    onclick="app.quickSale(${customer.id})">
+                            <button class="btn btn-sm btn-primary me-1">
                                 <i class="fas fa-plus"></i> Sale
                             </button>
-                            <button class="btn btn-sm btn-success me-1" 
-                                    onclick="app.quickPayment(${customer.id})">
+                            <button class="btn btn-sm btn-success me-1">
                                 <i class="fas fa-money-bill"></i> Payment
                             </button>
-                            <button class="btn btn-sm btn-outline-info" 
-                                    onclick="app.viewCustomer(${customer.id})">
+                            <button class="btn btn-sm btn-outline-info">
                                 <i class="fas fa-eye"></i> View
                             </button>
                         </div>
@@ -512,22 +270,32 @@ class ElectricalStoreApp {
                     </span>
                 </div>
             `).join('');
+        } else {
+            recentCustomersDiv.innerHTML = '<p class="text-muted">No customers added yet.</p>';
         }
+    }
 
-        const customersWithDebt = this.customers.filter(c => c.totalDebt > 0);
-        const pendingPaymentsDiv = document.getElementById('pendingPayments');
+    updateGoogleDriveStatus(connected) {
+        const btn = document.getElementById('googleDriveBtn');
+        const status = document.getElementById('driveStatus');
         
-        if (customersWithDebt.length > 0) {
-            pendingPaymentsDiv.innerHTML = customersWithDebt.map(customer => `
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div>
-                        <strong>${customer.name}</strong><br>
-                        <small class="text-muted">${customer.phone}</small>
-                    </div>
-                    <span class="debt-amount">₹${customer.totalDebt.toFixed(2)}</span>
-                </div>
-            `).join('');
+        if (connected) {
+            btn.className = 'btn btn-success me-2';
+            status.innerHTML = '<i class="fas fa-check"></i> Drive Connected';
+        } else {
+            btn.className = 'btn btn-outline-primary me-2';
+            status.innerHTML = '<i class="fab fa-google-drive"></i> Connect Drive';
         }
+    }
+
+    saveLocalData() {
+        localStorage.setItem('customers', JSON.stringify(this.customers));
+    }
+
+    loadLocalData() {
+        this.customers = JSON.parse(localStorage.getItem('customers') || '[]');
+        this.updateDashboard();
+        this.displayCustomers();
     }
 
     showSection(sectionId) {
@@ -549,6 +317,21 @@ class ElectricalStoreApp {
         modal.show();
     }
 
+    showMainApp() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        this.loadLocalData();
+    }
+
+    logout() {
+        sessionStorage.removeItem('currentSession');
+        this.isLoggedIn = false;
+        this.isGoogleDriveConnected = false;
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+        document.getElementById('password').value = '';
+    }
+
     showLoading() {
         document.getElementById('loadingSpinner').classList.remove('hidden');
     }
@@ -567,28 +350,13 @@ class ElectricalStoreApp {
         `;
         
         document.body.appendChild(alert);
-        
         setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
+            if (alert.parentNode) alert.remove();
         }, 4000);
-    }
-
-    quickSale(customerId) {
-        this.showAlert('Quick Sale feature coming soon!', 'info');
-    }
-
-    quickPayment(customerId) {
-        this.showAlert('Quick Payment feature coming soon!', 'info');
-    }
-
-    viewCustomer(customerId) {
-        this.showAlert('Customer details view coming soon!', 'info');
     }
 }
 
-// Global functions (same as before)
+// Global functions
 function logout() { app.logout(); }
 function showSection(section) { app.showSection(section); }
 function showAddCustomer() { app.showAddCustomer(); }
