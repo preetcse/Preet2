@@ -1,11 +1,11 @@
-// Amarjit Electrical Store - Cross-Device Application
+// Amarjit Electrical Store - Modern Google Identity Services
 
 class ElectricalStoreApp {
     constructor() {
         // Your password (change this!)
         this.PASSWORD = 'amarjit123';
         
-        // Google Drive API configuration - REAL CREDENTIALS
+        // Google Drive API configuration
         this.CLIENT_ID = '2633417852-d1qhnoi6rlgb191l7h0ohtfoiiduivmb.apps.googleusercontent.com';
         this.API_KEY = 'AIzaSyAHaAwjtqBnoOMuZY_1yFA8X4CBnkf2eYc';
         
@@ -13,7 +13,7 @@ class ElectricalStoreApp {
         this.isLoggedIn = false;
         this.isGoogleDriveConnected = false;
         this.customers = [];
-        this.appFolderId = null;
+        this.googleUser = null;
         
         this.init();
     }
@@ -27,6 +27,27 @@ class ElectricalStoreApp {
         }
 
         this.setupEventListeners();
+        
+        // Load Google Identity Services
+        this.loadGoogleIdentityServices();
+    }
+
+    loadGoogleIdentityServices() {
+        // Load the new Google Identity Services
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.onload = () => {
+            this.initializeGoogleIdentity();
+        };
+        document.head.appendChild(script);
+    }
+
+    initializeGoogleIdentity() {
+        // Initialize Google Identity Services
+        google.accounts.id.initialize({
+            client_id: this.CLIENT_ID,
+            callback: this.handleGoogleSignIn.bind(this)
+        });
     }
 
     setupEventListeners() {
@@ -65,39 +86,53 @@ class ElectricalStoreApp {
         this.showLoading();
         
         try {
-            await this.initializeGoogleAPI();
+            // Initialize Google APIs client
+            await this.initializeGoogleAPIs();
             
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (!authInstance.isSignedIn.get()) {
-                await authInstance.signIn();
-            }
+            // Use Google Identity Services for OAuth
+            const tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: this.CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: (response) => {
+                    if (response.error) {
+                        console.error('OAuth error:', response);
+                        this.showAlert('Failed to connect to Google Drive. Please try again.', 'danger');
+                        this.hideLoading();
+                        return;
+                    }
+                    
+                    // Store the access token
+                    gapi.client.setToken({access_token: response.access_token});
+                    
+                    this.isGoogleDriveConnected = true;
+                    this.updateGoogleDriveStatus(true);
+                    this.showAlert('Google Drive connected successfully! Data will sync automatically.', 'success');
+                    this.hideLoading();
+                }
+            });
 
-            this.isGoogleDriveConnected = true;
-            this.updateGoogleDriveStatus(true);
-            this.showAlert('Google Drive connected successfully! Data will sync automatically.', 'success');
+            // Request access token
+            tokenClient.requestAccessToken();
             
         } catch (error) {
             console.error('Google Drive connection failed:', error);
             this.showAlert('Failed to connect to Google Drive. Please try again.', 'danger');
+            this.hideLoading();
         }
-        
-        this.hideLoading();
     }
 
-    async initializeGoogleAPI() {
+    async initializeGoogleAPIs() {
         return new Promise((resolve, reject) => {
             if (typeof gapi === 'undefined') {
                 reject('Google API not loaded');
                 return;
             }
 
-            gapi.load('auth2:client', async () => {
+            gapi.load('client', async () => {
                 try {
                     await gapi.client.init({
                         apiKey: this.API_KEY,
-                        clientId: this.CLIENT_ID,
-                        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-                        scope: 'https://www.googleapis.com/auth/drive.file'
+                        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
                     });
                     
                     resolve();
@@ -106,6 +141,11 @@ class ElectricalStoreApp {
                 }
             });
         });
+    }
+
+    handleGoogleSignIn(credentialResponse) {
+        // Handle Google Sign-In response if needed
+        console.log('Google Sign-In response:', credentialResponse);
     }
 
     async addCustomer() {
@@ -163,24 +203,59 @@ class ElectricalStoreApp {
     async saveToGoogleDrive(fileName, data) {
         const fileContent = JSON.stringify(data, null, 2);
         
-        const metadata = {
-            name: fileName,
-            parents: ['appDataFolder']
-        };
+        try {
+            // Check if file exists
+            const searchResponse = await gapi.client.drive.files.list({
+                q: `name='${fileName}' and parents in 'appDataFolder'`,
+                spaces: 'appDataFolder'
+            });
 
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-        form.append('file', new Blob([fileContent], {type: 'application/json'}));
+            const boundary = '-------314159265358979323846';
+            const delimiter = "\r\n--" + boundary + "\r\n";
+            const close_delim = "\r\n--" + boundary + "--";
 
-        const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+            let metadata, method, path;
 
-        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: form
-        });
+            if (searchResponse.result.files.length > 0) {
+                // Update existing file
+                const fileId = searchResponse.result.files[0].id;
+                metadata = {};
+                method = 'PATCH';
+                path = `/upload/drive/v3/files/${fileId}?uploadType=multipart`;
+            } else {
+                // Create new file
+                metadata = {
+                    name: fileName,
+                    parents: ['appDataFolder']
+                };
+                method = 'POST';
+                path = '/upload/drive/v3/files?uploadType=multipart';
+            }
+
+            const multipartRequestBody =
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                JSON.stringify(metadata) +
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                fileContent +
+                close_delim;
+
+            const request = gapi.client.request({
+                path: path,
+                method: method,
+                params: {'uploadType': 'multipart'},
+                headers: {
+                    'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                },
+                body: multipartRequestBody
+            });
+
+            await request;
+        } catch (error) {
+            console.error('Error saving to Google Drive:', error);
+            throw error;
+        }
     }
 
     displayCustomers() {
