@@ -1,3 +1,4 @@
+(cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF'
 diff --git a/app.js b/app.js
 --- a/app.js
 +++ b/app.js
@@ -2567,3 +2568,5 @@ diff --git a/app.js b/app.js
 +    }
 +});
 +
+EOF
+)
